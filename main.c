@@ -7,12 +7,12 @@
 typedef struct course_students {
   char id[8];
   struct course_students *nxt;
-}
+};
 
 typedef struct student_courses {
   char id[8];
   struct students_courses *nxt;
-}
+};
 
 typedef struct students {
   char id[8];
