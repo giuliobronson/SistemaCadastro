@@ -11,7 +11,7 @@ typedef struct course_students {
 
 typedef struct student_courses {
   char id[8];
-  struct students_courses *nxt;
+  struct student_courses *nxt;
 };
 
 typedef struct students {
@@ -19,13 +19,13 @@ typedef struct students {
   char name[96];
   char cpf[16];
   struct students *nxt;
-  struct students_courses *init_courses;
+  struct student_courses *init_courses;
 } TStudents;
 
 typedef struct courses{
   char id[8];
   char name[52];
-  char professors[96][16]
+  char professors[96][16];
   struct courses *nxt;
   struct course_students *init_students;
 } TCourses;
