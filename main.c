@@ -143,12 +143,6 @@ int main() {
 
   start_students(&init_student);
 
-  TStudents *aux = init_student;
-  while(aux) {
-    printf("%s\n", aux->id);
-    aux = aux->nxt;
-  }
-
   do {
     int opt1;
     printf(
