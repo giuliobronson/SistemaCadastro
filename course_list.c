@@ -7,6 +7,7 @@
 typedef struct course_students {
   char period[8];
   char students[50][8];
+  int studentsNumber;
   struct course_students *nxt;
 } CStudents;
 
@@ -33,13 +34,6 @@ typedef struct courses{
 } TCourses;
 
 /* FUNÇÕES */
-void insert_course_student(CStudents **initalPointer, char period[], char students[][8]) {
-    CStudents *newElement = (CStudents *)malloc(sizeof(CStudents));
-    strcpy(newElement->period, period);
-    strcpy(newElement->students[0], students[0]);
-    newElement->nxt = *initalPointer;
-    *initalPointer = newElement;
-}
 
 
 void delete_student() {
@@ -67,18 +61,45 @@ TCourses* find_course(TCourses *begin, char id[]) { //works
   
 }
 
-char** find_course_students(TCourses *begin, char course_id[], char period[]) {
-    TCourses *targetCourse = (TCourses *)malloc(sizeof(TCourses));
+void insert_course_student(char period[], char student[], char course[], TCourses *begin ) { //works
+    TCourses *target = (TCourses *)malloc(sizeof(TCourses));
+    target = find_course(begin,"1234");
+    CStudents *aux = target->init_students;
+    while(aux) {
+      if(strcmp(period,aux->period) == 0) {
+        int position = aux->studentsNumber;
+        strcpy(aux->students[position], student);
+        aux->studentsNumber++;
+        return;
+      }
+      aux = aux->nxt;
+    }
+
+
+    CStudents *newElement = (CStudents *)malloc(sizeof(CStudents));
+    strcpy(newElement->period, period);
+    strcpy(newElement->students[0], student);
+    newElement->studentsNumber = 1;
+    newElement->nxt = target->init_students;
+    target->init_students = newElement;
+}
+
+void print_course_students(TCourses *begin, char course_id[], char period[]) {
+    TCourses *targetCourse;
     targetCourse = find_course(begin, course_id);
     while (targetCourse->init_students) {
       if(strcmp(period, targetCourse->init_students->period) == 0) {
-        char **periodStudents = (char**)malloc(sizeof(char*));
-        periodStudents = targetCourse->init_students->students;
-        printf("Here: %s\n", targetCourse->init_students->students[0]);
-        return periodStudents;
+        if(targetCourse->init_students->studentsNumber > 0){
+          printf("Alunos: \n");
+          for(int i = 0; i < targetCourse->init_students->studentsNumber; i++){
+            printf("%s \n",targetCourse->init_students->students[i]);
+          }
+          return;
+        }
       }
       targetCourse->init_students = targetCourse->init_students->nxt;
     }   
+    printf("Não há alunos cadastrados nesse período\n");
 }
 
 void delete_course(TCourses **initialPointer, char id[]) { //works
@@ -93,6 +114,13 @@ void delete_course(TCourses **initialPointer, char id[]) { //works
   }
 
   if(aux){
+    CStudents *aux2 = aux->init_students;
+    while (aux2) {
+      CStudents *temp = aux2;
+      free(aux2);
+      aux2 = temp->nxt;
+    }
+    
     if(previous){
       previous->nxt = aux->nxt;
     }else *initialPointer = aux->nxt;
@@ -118,23 +146,24 @@ int main() {
 
     TCourses *target = (TCourses *)malloc(sizeof(TCourses));
     target = find_course(begin,"1234");
-    char students[1][8] = {"20010"};
-    insert_course_student(&(target->init_students), "2022.1",students);
-    printf("%s\n", (target->init_students)->period);
+    insert_course_student("2022.1","20010", "1234", begin);
+    insert_course_student("2022.1","20011", "1234", begin);
+    insert_course_student("2022.2","20020", "1234", begin);
+    printf("%s\n", (target->init_students)->students[0]);
 
     //Como printar o vetor de char de alunos?? Tomando core dumped na 123
     //printf("Aqui %s", find_course_students(begin,"1234","2022.1")[0]);
-    find_course_students(begin,"1234","2022.1");
+    print_course_students(begin,"1234","2021.2");
 
     TCourses *aux = begin;
 
     //imprimir valores
-    while(aux) {
-        printf("%s  was the id\n", aux->id);
-        if(aux->init_students)
-          printf("here is %s", aux->init_students->students[0]);
-        aux = aux->nxt;
-    }
+    // while(aux) {
+    //     printf("%s  was the id\n", aux->id);
+    //     if(aux->init_students)
+    //       printf("here is %s", aux->init_students->students[0]);
+    //     aux = aux->nxt;
+    // }
 
     //liberar memoria
     aux = begin;
