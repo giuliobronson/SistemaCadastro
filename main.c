@@ -7,7 +7,7 @@
 typedef struct course_students {
   char id[8];
   struct course_students *nxt;
-};
+} CStudents;
 
 typedef struct student_courses {
   char id[8];
@@ -43,17 +43,47 @@ void delete_student() {
 
 }
 
-void insert_course() {
+void insert_course(TCourses **initialPointer, char courseId[], char courseName[], char courseProfessors[][]) {
+  TCourses *newElement = (TCourses *)malloc(sizeof(TCourses));
+  newElement -> id = courseId;
+  newElement -> name = courseName;
+  newElement -> professors = courseProfessors;
+  newElement -> init_students = NULL;
+  newElement -> nxt = *initialPointer;
+  *initialPointer = newElement;
 
 }
-
-void find_course() {
-
+//Retornar o próprio elemento da lista na busca
+TCourses* find_course(TCourses *begin, char id[]) {
+  while (begin) {
+    if(strcmp(id, begin->id) == 0){
+      return begin;
+    }
+    begin = begin->nxt;
+  }
+  
 }
 
-void delete_student() {
+void delete_student(TCourses **initialPointer, char id[]) {
+  TCourses *aux = *initialPointer;
+  TCourses *previous = NULL;
+  while(aux) {
+    if(strcmp(id, aux->id) == 0){
+      break;
+    }
+    previous = aux;
+    aux = aux->nxt;
+  }
 
+  if(aux){
+    if(previous){
+      previous->nxt = aux->nxt;
+    }else *initialPointer = aux->nxt;
+    free(aux);
+  }
 }
+
+
 
 /* LOOP PRINCIPAL */
 int main() {
