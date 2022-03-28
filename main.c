@@ -22,6 +22,7 @@ typedef struct students {
   char id[8];
   char name[96];
   char cpf[16];
+  int periodsNumber;
   struct students *nxt;
   struct student_courses *init_courses;
 } TStudents;
@@ -31,13 +32,14 @@ typedef struct courses{
   char name[52];
   char professors[16][96];
   int credits;
+  int periodsNumber;
   struct courses *nxt;
   struct course_students *init_students;
 } TCourses;
 
 /* FUNÇÕES */
 
-/* Funções de gerenciamento de estudantes*/
+// Funções de inicialização das listas
 void start_students(TStudents **ptr_init) {
   FILE *file;
   int read = 1;
@@ -47,6 +49,13 @@ void start_students(TStudents **ptr_init) {
     while(1) {
       TStudents *new = (TStudents*)malloc(sizeof(TStudents));
       if(fread(new, sizeof(TStudents), 1, file) == 0) break;
+      new->init_courses = NULL;
+      for(int i = 0; i < new->periodsNumber; i++) {
+        TStudentCourses *newSubList = (TStudentCourses*)malloc(sizeof(TStudentCourses));
+        fread(newSubList, sizeof(TStudentCourses), 1, file);
+        newSubList->nxt = new->init_courses;
+        new->init_courses = newSubList;
+      }
       new->nxt = *ptr_init;
       *ptr_init = new;
     }
@@ -56,6 +65,32 @@ void start_students(TStudents **ptr_init) {
   fclose(file);
 }
 
+void start_courses(TCourses **ptr_init) {
+  FILE *file;
+  int read = 1;
+
+  file = fopen("disciplinas.txt", "rb");
+  if(file) {
+    while(1) {
+      TCourses *new = (TCourses*)malloc(sizeof(TCourses));
+      if(fread(new, sizeof(TCourses), 1, file) == 0) break;
+      new->init_students = NULL;
+      for(int i = 0; i < new->periodsNumber; i++) {
+        CStudents *newSubList = (CStudents*)malloc(sizeof(CStudents));
+        fread(newSubList, sizeof(CStudents), 1, file);
+        newSubList->nxt = new->init_students;
+        new->init_students = newSubList;
+      }
+      new->nxt = *ptr_init;
+      *ptr_init = new;
+    }
+  }
+  else
+    file = fopen("disciplinas.txt", "wb");
+  fclose(file);
+}
+
+// Funções de busca
 TStudents* find_student(TStudents *ptr_init, char *id) {
   while(ptr_init) {
     if(strcmp(id, ptr_init->id) == 0) return ptr_init;
@@ -64,6 +99,17 @@ TStudents* find_student(TStudents *ptr_init, char *id) {
   return NULL;
 }
 
+TCourses* find_course(TCourses *begin, char id[]) { //works
+  while (begin) {
+    if(strcmp(id, begin->id) == 0){
+      return begin;
+    }
+    begin = begin->nxt;
+  }
+  
+}
+
+// Funções de inserção
 void insert_student(TStudents **ptr_init, char *id, char *name, char *cpf) {
   TStudents *new = (TStudents*)malloc(sizeof(TStudents));
   if(!new) {
@@ -74,11 +120,26 @@ void insert_student(TStudents **ptr_init, char *id, char *name, char *cpf) {
   strcpy(new->id, id);
   strcpy(new->name, name);
   strcpy(new->cpf, cpf);
+  new->periodsNumber = 0;
   new->init_courses = NULL;
   new->nxt = *ptr_init;
   *ptr_init = new;
 
   printf("\nAluno inserido com sucesso!\n");
+}
+
+void insert_course(TCourses **initialPointer, char courseId[], char courseName[], char courseProfessors[][96], int professorsNumbers, int credits) { //works
+  TCourses *newElement = (TCourses *)malloc(sizeof(TCourses));
+  strcpy(newElement -> id,courseId);
+  strcpy(newElement -> name, courseName);
+  for(int i = 0; i < professorsNumbers; i++) 
+    strcpy(newElement->professors[i], courseProfessors[i]);
+  newElement->periodsNumber = 0;
+  newElement -> credits = credits;
+  newElement -> init_students = NULL;
+  newElement -> nxt = *initialPointer;
+  *initialPointer = newElement;
+  printf("\nDisciplina inserida com sucesso!\n");
 }
 
 void insert_student_course(TStudents *ptr_init, char *course_id, char *student_id, char *period) {
@@ -100,99 +161,7 @@ void insert_student_course(TStudents *ptr_init, char *course_id, char *student_i
   new->coursesNumber = 1;
   new->nxt = student->init_courses;
   student->init_courses = new;
-}
-
-void print_period_courses(TStudents *ptr_init, char *id, char *period) {
-  TStudents *student = find_student(ptr_init, id);
-
-  TStudentCourses *aux = student->init_courses;
-  while(aux) {
-    if(strcmp(period, aux->period) == 0) {
-        printf("\nDisciplinas:\n");
-        for(int i = 0; i < aux->coursesNumber; i++) 
-          printf("%s\n", aux->ids[i]); // Printar os nomes futuramente
-      return;
-    }
-    aux = aux->nxt;
-  }
-  printf("\nEsse aluno não cursou disciplinas nesse período\n");
-}
-
-void delete_student(TStudents **ptr_init, char *id) {
-  TStudents *node = *ptr_init, *prev;
-  while(node) {
-    if(strcmp(id, node->id) == 0) break;
-    prev = node;
-    node = node->nxt;
-  }
-  if(node) {
-    if(prev) prev->nxt = node->nxt;
-    else *ptr_init = node->nxt;
-
-    TStudentCourses *aux = node->init_courses;
-    while(aux) {
-      TStudentCourses *tmp = aux->nxt;
-      free(aux);
-      aux = tmp;
-    }
-
-    free(node);
-
-    printf("\nAluno removido com sucesso!\n");
-    return;
-  }
-  
-  printf("\nAluno não encontrado!\n");
-}
-
-void save_students(TStudents *ptr_init) {
-  TStudents *aux = ptr_init;
-  FILE *file;
-
-  file = fopen("alunos.txt", "wb");
-  if(!file) {
-    printf("Erro no salvamento!\n");
-    return;
-  }
-  fwrite(aux, sizeof(TStudents), 1, file);
-  fclose(file);
-  aux = aux->nxt;
-
-  file = fopen("alunos.txt", "ab");
-  if(!file) {
-    printf("Erro no salvamento!\n");
-    return;
-  }
-  while(aux) {
-    fwrite(aux, sizeof(TStudents), 1, file);
-    aux = aux->nxt;
-  }
-  fclose(file);
-}
-
-
-/* Funções de gerenciamento de disciplinas */
-void insert_course(TCourses **initialPointer, char courseId[], char courseName[], char courseProfessors[][96], int professorsNumbers, int credits) { //works
-  TCourses *newElement = (TCourses *)malloc(sizeof(TCourses));
-  strcpy(newElement -> id,courseId);
-  strcpy(newElement -> name, courseName);
-  for(int i = 0; i < professorsNumbers; i++) 
-    strcpy(newElement->professors[i], courseProfessors[i]);
-  newElement -> credits = credits;
-  newElement -> init_students = NULL;
-  newElement -> nxt = *initialPointer;
-  *initialPointer = newElement;
-  printf("\nDisciplina inserida com sucesso!\n");
-}
-
-TCourses* find_course(TCourses *begin, char id[]) { //works
-  while (begin) {
-    if(strcmp(id, begin->id) == 0){
-      return begin;
-    }
-    begin = begin->nxt;
-  }
-  
+  student->periodsNumber++;
 }
 
 void insert_course_student(char period[], char student[], char course[], TCourses *begin ) { //works
@@ -219,6 +188,26 @@ void insert_course_student(char period[], char student[], char course[], TCourse
   newElement->studentsNumber = 1;
   newElement->nxt = target->init_students;
   target->init_students = newElement;
+  target->periodsNumber++;
+}
+
+// Funções de impressão
+void print_period_courses(TStudents *ptr_init, char *id, char *period, TCourses *init_course) {
+  TStudents *student = find_student(ptr_init, id);
+
+  TStudentCourses *aux = student->init_courses;
+  while(aux) {
+    if(strcmp(period, aux->period) == 0) {
+        printf("\nDisciplinas:\n");
+        for(int i = 0; i < aux->coursesNumber; i++) {
+          TCourses *course = find_course(init_course, aux->ids[i]); 
+          printf("%s\n", course->name);
+        }
+      return;
+    }
+    aux = aux->nxt;
+  }
+  printf("\nEsse aluno não cursou disciplinas nesse período\n");
 }
 
 void print_course_students(TCourses *begin, char course_id[], char period[]) {
@@ -236,7 +225,35 @@ void print_course_students(TCourses *begin, char course_id[], char period[]) {
     }
     targetCourse->init_students = targetCourse->init_students->nxt;
   }   
-  printf("Não há alunos cadastrados nesse período\n");
+  printf("\nNão há alunos cadastrados nesse período\n");
+}
+
+// Funções de remoção
+void delete_student(TStudents **ptr_init, char *id) {
+  TStudents *node = *ptr_init, *prev;
+  while(node) {
+    if(strcmp(id, node->id) == 0) break;
+    prev = node;
+    node = node->nxt;
+  }
+  if(node) {
+    if(prev) prev->nxt = node->nxt;
+    else *ptr_init = node->nxt;
+
+    TStudentCourses *aux = node->init_courses;
+    while(aux) {
+      TStudentCourses *tmp = aux->nxt;
+      free(aux);
+      aux = tmp;
+    }
+
+    free(node);
+
+    printf("\nAluno removido com sucesso!\n");
+    return;
+  }
+  
+  printf("\nAluno não encontrado!\n");
 }
 
 void delete_course(TCourses **initialPointer, char id[]) { //works
@@ -266,15 +283,86 @@ void delete_course(TCourses **initialPointer, char id[]) { //works
   printf("\nDisciplina removida!\n");
 }
 
+// Funções de salvamento
+void save_students(TStudents *ptr_init) {
+  TStudents *aux = ptr_init;
+  FILE *file;
+
+  file = fopen("alunos.txt", "wb");
+  if(!file) {
+    printf("Erro no salvamento!\n");
+    return;
+  }
+  fwrite(aux, sizeof(TStudents), 1, file);
+  TStudentCourses *aux2 = aux->init_courses;
+  while (aux2) {
+    fwrite(aux2, sizeof(TStudentCourses), 1, file);
+    aux2 = aux2->nxt;
+  }
+  
+  fclose(file);
+  aux = aux->nxt;
+
+  file = fopen("alunos.txt", "ab");
+  if(!file) {
+    printf("Erro no salvamento!\n");
+    return;
+  }
+  while(aux) {
+    fwrite(aux, sizeof(TStudents), 1, file);
+    TStudentCourses *aux2 = aux->init_courses;
+    while (aux2) {
+      fwrite(aux2, sizeof(TStudentCourses), 1, file);
+      aux2 = aux2->nxt;
+    }
+    aux = aux->nxt;
+  }
+  fclose(file);
+}
+
+void save_courses(TCourses *ptr_init) {
+  TCourses *aux = ptr_init;
+  FILE *file;
+
+  file = fopen("disciplinas.txt", "wb");
+  if(!file) {
+    printf("Erro no salvamento!\n");
+    return;
+  }
+  fwrite(aux, sizeof(TCourses), 1, file);
+  CStudents *aux2 = aux->init_students;
+  while (aux2) {
+    fwrite(aux2, sizeof(CStudents), 1, file);
+    aux2 = aux2->nxt;
+  }
+  
+  fclose(file);
+  aux = aux->nxt;
+
+  file = fopen("disciplinas.txt", "ab");
+  if(!file) {
+    printf("Erro no salvamento!\n");
+    return;
+  }
+  while(aux) {
+    fwrite(aux, sizeof(TCourses), 1, file);
+    CStudents *aux2 = aux->init_students;
+    while (aux2) {
+      fwrite(aux2, sizeof(CStudents), 1, file);
+      aux2 = aux2->nxt;
+    }
+    aux = aux->nxt;
+  }
+  fclose(file);
+}
+
 /* LOOP PRINCIPAL */
 int main() {
   TStudents *init_student = NULL;
   TCourses *init_course = NULL;
 
   start_students(&init_student);
-  // insert_student_course(init_student, "1234", "20028", "2022.1");
-  // insert_student_course(init_student, "1234", "20028", "2021.1");
-  // insert_student_course(init_student, "4321", "20028", "2021.1");
+  start_courses(&init_course);
 
   do {
     int opt1;
@@ -337,7 +425,7 @@ int main() {
             printf("Insira o período que deseja visualizar as disciplinas do aluno\n");
             printf("~ "); scanf("%s", period); getchar();
 
-            print_period_courses(init_student, id, period);
+            print_period_courses(init_student, id, period, init_course);
           }
           else
             printf("\nAluno não encontrado!\n");
@@ -367,6 +455,8 @@ int main() {
           save_students(init_student);
           break;
         }
+        else
+          printf("Opção inválida!\n\n");
       }
     }
     else if(opt1 == 2) {
@@ -413,11 +503,9 @@ int main() {
               "\nCódigo: %s\n"
               "Nome: %s\n"
               "Créditos: %d\n", course->id, course->name, course->credits);
-            int i = 0;
-            while(course->professors[i][0] != '\0') {
+            printf("Professores: ");
+            for(int i = 0; course->professors[i][0] != '\0'; i++) 
               printf(course->professors[i + 1][0] != '\0' ? "%s, " : "%s\n", course->professors[i]);
-              i++;
-            }
 
             char period[8];
 
@@ -438,6 +526,7 @@ int main() {
           delete_course(&init_course, id);
         }
         else if(opt2 == 4){
+          save_courses(init_course);
           break;
         }
         else {
