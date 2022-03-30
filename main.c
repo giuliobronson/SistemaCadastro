@@ -235,17 +235,16 @@ void print_period_courses(TStudents *ptr_init, char *id, char *period, TCourses 
 void print_course_students(TCourses *begin, char course_id[], char period[]) {
   TCourses *targetCourse;
   targetCourse = find_course(begin, course_id);
-  while (targetCourse->init_students) {
-    if(strcmp(period, targetCourse->init_students->period) == 0) {
-      if(targetCourse->init_students->studentsNumber > 0){
-        printf("Alunos: \n");
-        for(int i = 0; i < targetCourse->init_students->studentsNumber; i++){
-          printf("%s \n",targetCourse->init_students->students[i]);
-        }
-        return;
+  CStudents *aux = targetCourse->init_students; 
+  while (aux) {
+    if(targetCourse->init_students->studentsNumber > 0){
+      printf("Alunos: \n");
+      for(int i = 0; i < targetCourse->init_students->studentsNumber; i++){
+        printf("%s \n",targetCourse->init_students->students[i]);
       }
+      return;
     }
-    targetCourse->init_students = targetCourse->init_students->nxt;
+    aux = aux->nxt;
   }   
   printf("\nNão há alunos cadastrados nesse período\n");
 }
@@ -475,6 +474,7 @@ int main() {
         }
         else if(opt2 == 5) {
           save_students(init_student);
+          save_courses(init_course);
           break;
         }
         else
