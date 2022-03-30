@@ -237,10 +237,10 @@ void print_course_students(TCourses *begin, char course_id[], char period[]) {
   targetCourse = find_course(begin, course_id);
   CStudents *aux = targetCourse->init_students; 
   while (aux) {
-    if(targetCourse->init_students->studentsNumber > 0){
+    if(strcmp(period, aux->period) == 0){
       printf("Alunos: \n");
-      for(int i = 0; i < targetCourse->init_students->studentsNumber; i++){
-        printf("%s \n",targetCourse->init_students->students[i]);
+      for(int i = 0; i < aux->studentsNumber; i++){
+        printf("%s \n", aux->students[i]);
       }
       return;
     }
