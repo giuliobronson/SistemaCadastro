@@ -106,14 +106,19 @@ TCourses* find_course(TCourses *begin, char id[]) { //works
     }
     begin = begin->nxt;
   }
-  
+  return NULL;  
 }
 
 // Funções de inserção
 void insert_student(TStudents **ptr_init, char *id, char *name, char *cpf) {
+  TStudents *student = find_student(*ptr_init, id);
+  if(student) {
+    printf("\nEsse aluno já está cadastrado\n");
+    return;
+  }
   TStudents *new = (TStudents*)malloc(sizeof(TStudents));
   if(!new) {
-    printf("Memória indisponível para alocação!\n");
+    printf("\nMemória indisponível para alocação!\n");
     return;
   }
 
@@ -129,6 +134,11 @@ void insert_student(TStudents **ptr_init, char *id, char *name, char *cpf) {
 }
 
 void insert_course(TCourses **initialPointer, char courseId[], char courseName[], char courseProfessors[][96], int professorsNumbers, int credits) { //works
+  TCourses *course = find_course(*initialPointer, courseId);
+  if(course) {
+    printf("\nEssa disciplina já está cadastrada\n");
+    return;
+  }
   TCourses *newElement = (TCourses *)malloc(sizeof(TCourses));
   strcpy(newElement -> id,courseId);
   strcpy(newElement -> name, courseName);
@@ -143,7 +153,15 @@ void insert_course(TCourses **initialPointer, char courseId[], char courseName[]
 }
 
 void insert_student_course(TStudents *ptr_init, char *course_id, char *student_id, char *period) {
+  if(!ptr_init) {
+    printf("\nNão há alunos cadastrados\n");
+    return;
+  }
   TStudents *student = find_student(ptr_init, student_id);
+  if(student == NULL) {
+    printf("\nAluno não encontrado!\n");
+    return;
+  }
   
   TStudentCourses *aux = student->init_courses;
   while(aux) {
@@ -170,6 +188,10 @@ void insert_course_student(char period[], char student[], char course[], TCourse
     return;
   }
   TCourses *target = find_course(begin, course);
+  if(target == NULL) {
+    printf("\nDisciplina não encontrada!\n");
+    return;
+  }
   CStudents *aux = target->init_students;
   while(aux) {
     if(strcmp(period,aux->period) == 0) {
@@ -441,7 +463,7 @@ int main() {
         else if(opt2 == 4) {
           char course_id[8], student_id[8], period[8];
 
-          printf("Qual o código da discipliana na qual você gostaria de realizar a matrícula?\n");
+          printf("Qual o código da disciplina na qual você gostaria de realizar a matrícula?\n");
           printf("~ "); scanf("%s", course_id); getchar();
           printf("Qual o estudante você gostaria de matricular nessa disciplina?\n");
           printf("~ "); scanf("%s", student_id); getchar();
